@@ -81,7 +81,7 @@ public class OnlineBallTree<T> implements Serializable
     }
     
     /**
-     * Inserts the location and the associated generic type item into the tree. Retursn true if inserted, returnd false if not inserted (when the
+     * Inserts the location and the associated generic type item into the tree. Returns true if inserted, returns false if not inserted (when the
      * location already existing in the tree)
      * 
      * @param location array holding the location of the item to add
@@ -245,6 +245,22 @@ public class OnlineBallTree<T> implements Serializable
         return result;    
     }
     
+    /**
+     * Returns the items whose locations are within the distance r to the query.
+     * 
+     * @param location query point
+     * @param queryRadius the ball radius around the location whose points to return
+     * @returns the items stored at the locations within the ball
+     */
+    public ArrayList<T> getAllNeighboursInRadius(double[] location, double queryRadius) {
+        if (root == null)
+            return null;
+        Ball query = new Ball(location, queryRadius);
+        ArrayList<T> result = new ArrayList<>();
+        this.radiusNeighbourSearch(query, root, result);
+        return result;    
+    }
+    
     /*
      * Recursive method for k-nearest neighbour search
      */
@@ -287,6 +303,30 @@ public class OnlineBallTree<T> implements Serializable
                     kNearestNeighbourSearch(query, processingNode.leftChild, kNNQueue, k);
                 }
             }
+        }
+        return;
+    }
+    
+    
+    /*
+     * Recursive method for getting neighbours within radius
+     */
+    private void radiusNeighbourSearch(Ball query, BallTreeNode processingNode, ArrayList<T> listOfItemsWithinRadius) {
+        if (processingNode.isLeaf()) {
+            double distance = Math.sqrt(query.squaredDistanceToCentre(processingNode.ball));
+            if (distance <= query.radius){ // location is within query ball, so store cargo to return
+                 listOfItemsWithinRadius.add(((BallTreeLeaf<T>)processingNode).cargo);
+                 return; 
+            }
+            
+        } else { // if at interior node, check if we need to go down
+            double distLeft = processingNode.leftChild.ball.nearestDistanceToCentre(query);
+            double distRight = processingNode.rightChild.ball.nearestDistanceToCentre(query);
+
+            if (distLeft <= query.radius) 
+                radiusNeighbourSearch(query, processingNode.leftChild, listOfItemsWithinRadius);
+            if (distRight <= query.radius)
+                radiusNeighbourSearch(query, processingNode.rightChild, listOfItemsWithinRadius);
         }
         return;
     }
