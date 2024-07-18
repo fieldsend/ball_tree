@@ -8,7 +8,7 @@ Five balltree construction algorithms.
 Berkeley: International Computer Science Institute, 1989
 
 Due to precision contraints, limited to arrays of max 452 dimensions (practically I would advise fewer than 
-this anyway, as the range of the varaibels will also have an efefct on when ball voulmes get vanishingly small).
+this anyway, as the range of the varaibles will also have an effect on when ball volumes get vanishingly small).
 
 To instantiate use:
 <code>
