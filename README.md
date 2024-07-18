@@ -25,3 +25,8 @@ ballTree.insert(location,cargo);
 Will insert double array <code>location</code> into the ball tree, along with the associated cargo object.
 
 Various methods are provided for querying, updating, removing, getting cargo of all neighbours within the ball around a query location, etc. (see JavaDoc).
+
+Note, requires apache commons, specifically
+<code>
+org.apache.commons.math3.special.Gamma;
+<\code>
