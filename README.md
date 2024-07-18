@@ -29,4 +29,4 @@ Various methods are provided for querying, updating, removing, getting cargo of 
 Note, requires apache commons, specifically
 <code>
 org.apache.commons.math3.special.Gamma;
-<\code>
+</code>
