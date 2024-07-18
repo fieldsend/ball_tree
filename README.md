@@ -12,7 +12,7 @@ this anyway, as the range of the varaibels will also have an efefct on when ball
 
 To instantiate use:
 <code>
-OnlineBallTree<Type> ballTree = new OnlineBallTree<>(dim);
+OnlineBallTree&lt;Type&gt; ballTree = new OnlineBallTree&lt;&gt;(dim);
 </code>
 Where <code>Type</code> denotes the object type (cargo) you want to associate with each element in the ball 
 tree, and <code>dim</code> denotes the number of variables in the double-precision arrays which are the 
