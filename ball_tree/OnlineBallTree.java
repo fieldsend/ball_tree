@@ -97,7 +97,6 @@ public class OnlineBallTree<T> implements Serializable
         BallTreeLeaf<T> newLeaf = new BallTreeLeaf<>( new Ball(location, 0.0) ,cargo);
         if (this.root == null){
             this.root = newLeaf;
-            //System.out.println("Set Root: " + newLeaf);
         } else {
             BallTreeNode sibling = this.bestSibling(newLeaf);
             BallTreeNode newParent = new BallTreeNode( Ball.boundingBall(newLeaf.ball, sibling.ball) );
@@ -267,17 +266,13 @@ public class OnlineBallTree<T> implements Serializable
     private void kNearestNeighbourSearch(Ball query, BallTreeNode processingNode, PriorityQueue<QueuedLeaf<T>> kNNQueue, int k) {
         if (processingNode.isLeaf()) {
             double distance = Math.sqrt(query.squaredDistanceToCentre(processingNode.ball));
-            //System.out.println("dist: " + distance + ", query r: " + query.radius);
             if (kNNQueue.size() < k-1) { // fewer than k neighbours in queue so far, so query radius should not be reduced
-                //System.out.println("returning leaf, queue not full");
                 kNNQueue.offer(new QueuedLeaf<T>((BallTreeLeaf<T>)processingNode, distance));
             } else if (kNNQueue.size() == k-1){ // special casee where queue firs reaches k elements and need to update query radius
-                //System.out.println("returning leaf, queue reaches capacity");
                 kNNQueue.offer(new QueuedLeaf<T>((BallTreeLeaf<T>)processingNode, distance));
                 query.radius = kNNQueue.peek().distance;
             } else { // now prority queue has k members, so only add if the new point has a distance value smaller than the head of the queue
                 if (distance <= query.radius){
-                    //System.out.println("returning leaf, as better than worst queue member");
                     query.radius = distance; // update best distance
                     kNNQueue.poll(); // remove head
                     kNNQueue.offer(new QueuedLeaf<T>((BallTreeLeaf<T>)processingNode, distance));
@@ -323,7 +318,7 @@ public class OnlineBallTree<T> implements Serializable
             double distLeft = processingNode.leftChild.ball.nearestDistanceToCentre(query);
             double distRight = processingNode.rightChild.ball.nearestDistanceToCentre(query);
 
-            if (distLeft <= query.radius) 
+            if (distLeft <= query.radius)
                 radiusNeighbourSearch(query, processingNode.leftChild, listOfItemsWithinRadius);
             if (distRight <= query.radius)
                 radiusNeighbourSearch(query, processingNode.rightChild, listOfItemsWithinRadius);
@@ -337,9 +332,7 @@ public class OnlineBallTree<T> implements Serializable
     private BallTreeNode nearestNeighbourSearch(Ball query, BallTreeNode processingNode, BallTreeNode nearestNeighbour) {
         if (processingNode.isLeaf()) {
             double distance = Math.sqrt(query.squaredDistanceToCentre(processingNode.ball));
-            //System.out.println("dist: " + distance + ", query r: " + query.radius);
             if (distance <= query.radius){
-                //System.out.println("returning leaf");
                 query.radius = distance; // update best distance
                 return processingNode; // return processing node as best so far
             }
@@ -372,7 +365,6 @@ public class OnlineBallTree<T> implements Serializable
         if (root == null) {
             return null;
         }
-        //System.out.println("Inside bestSibling method: root " + this.root + ", new leaf: " + newLeaf);
         // initialise priority queue to store the fringe nodes as empty
         // The head of the queue is the least element of the ancestor expansion
         PriorityQueue<TestFringe> fringeNodePriorityQueue = new PriorityQueue<>();
@@ -388,7 +380,6 @@ public class OnlineBallTree<T> implements Serializable
         }
         while (fringeNodePriorityQueue.size() > 0){// priority queue is not empty
             // tf is popped off priority queue as the best candidate
-            //System.out.println("In while loop");
             tf = fringeNodePriorityQueue.poll();
             if (tf.ancestorExpansion >= bestCost)
                 break; 

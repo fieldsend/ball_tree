@@ -14,7 +14,7 @@ public class BallTreeNode implements Serializable
     BallTreeNode leftChild = null;
     BallTreeNode parent = null;
     Ball ball;
-    
+
     private static final long serialVersionUID = 42L;
     /**
      * Creates an instance of the BallTreeNode containing the ball argument, but which is not yet attached to a tree (no parent or children)
@@ -22,7 +22,7 @@ public class BallTreeNode implements Serializable
     BallTreeNode(Ball ball) {
         this.ball = ball;
     }
-    
+
     /**
      * Interior nodes are not leaves, so return false
      * 
@@ -31,16 +31,16 @@ public class BallTreeNode implements Serializable
     boolean isLeaf() {
         return false;
     }
-    
+
     /**
-     * Returns the hieght of this subtree plus 1
+     * Returns the height of this subtree plus 1
      * 
      * @returns hieght
      */ 
     int height(int i) {
-       if (this.isLeaf())
-           return i;
-       else
-           return Math.max(this.leftChild.height(i+1), this.rightChild.height(i+1));
+        if (this.isLeaf())
+            return i;
+        else
+            return Math.max(this.leftChild.height(i+1), this.rightChild.height(i+1));
     }
 }

@@ -57,7 +57,8 @@ public class Ball implements Serializable
     
     /** 
      * Returns the distance from the centre of the query Ball to the surface of the hypersphere of this ball
-     * which is the closest possible for any point contained in this Ball to the centre of the query.
+     * which is the closest possible for any point contained in this Ball to the centre of the query. Will return 
+     * a negative value if the query centre lies within this Ball.
      * 
      * @param query ball to compare to centre of
      */
