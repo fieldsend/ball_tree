@@ -28,7 +28,7 @@ import java.io.Serializable;
  * 
  * 
  * Due to precision issues, the implimentation is limited to double array locations with no more than 452 dimensions and will 
- * raise an exception if an attempt is made to construct it to hold location vectors will more elements than this (above this 
+ * raise an exception if an attempt is made to construct it to hold location vectors with more elements than this (above this 
  * the volume of the unit n-ball is 0.0). Note that in practice you may find that using a number of dimensions a few smaller 
  * than this is still problematic, depending on the domain range of the locations and queries used.
  *
