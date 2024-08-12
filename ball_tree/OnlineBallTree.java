@@ -202,6 +202,9 @@ public class OnlineBallTree<T> implements Serializable
         return queryResult == null ? null : queryResult.cargo;
     }
     
+    /*
+     * Method does various legality checking and the leaf whose location is closest to the query.
+     */
     private BallTreeLeaf<T> nearestLeafQuery(double[] location) throws IllegalNumberOfDimensionsException{
         if (location.length != this.DIM)
             throw new IllegalNumberOfDimensionsException("This OnlineBallTree is for " + this.DIM + " dimensions, but the query argument has " + location.length);
@@ -245,7 +248,7 @@ public class OnlineBallTree<T> implements Serializable
     }
     
     /**
-     * Returns the items whose locations are within the distance r to the query.
+     * Returns the items whose locations are within the distance queryRadius to the query.
      * 
      * @param location query point
      * @param queryRadius the ball radius around the location whose points to return
