@@ -3,7 +3,6 @@ package ball_tree;
 import java.util.PriorityQueue;
 import java.util.ArrayList;
 import java.io.Serializable;
-
 /**
  * OnlineBallTree is a generic implementation of the first online balltree algorithm 
  * set out in pages 11-14 of:
