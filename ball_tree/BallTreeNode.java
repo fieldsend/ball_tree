@@ -8,14 +8,19 @@ import java.io.Serializable;
  * @author Jonathan Fieldsend
  * @version 1.0
  */
-public class BallTreeNode implements Serializable
+public class BallTreeNode<T> implements Serializable
 {
-    BallTreeNode rightChild = null;
-    BallTreeNode leftChild = null;
-    BallTreeNode parent = null;
+    BallTreeNode<T> rightChild = null;
+    BallTreeNode<T> leftChild = null;
+    BallTreeNode<T> parent = null;
     Ball ball;
 
     private static final long serialVersionUID = 42L;
+    /**
+     * Create an instance of the BallTreeNode with no state set -- needed for OfflineBallTree construction
+     */
+    BallTreeNode() {}
+    
     /**
      * Creates an instance of the BallTreeNode containing the ball argument, but which is not yet attached to a tree (no parent or children)
      */

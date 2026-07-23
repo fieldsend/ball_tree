@@ -8,9 +8,9 @@ import java.io.Serializable;
  * @author Jonathan Fieldsend
  * @version 1.0
  */
-class TestFringe implements Comparable<TestFringe>, Serializable
+class TestFringe<T> implements Comparable<TestFringe<T>>, Serializable
 {
-    BallTreeNode node;
+    BallTreeNode<T> node;
     double ancestorExpansion;
     double nodeVolume;
     
@@ -21,7 +21,7 @@ class TestFringe implements Comparable<TestFringe>, Serializable
      * @param nodeVolume volume to store for this fringe item
      * @param node node to store for this fringe item
      */
-    TestFringe(double ancestorExpansion, double nodeVolume, BallTreeNode node) {
+    TestFringe(double ancestorExpansion, double nodeVolume, BallTreeNode<T> node) {
         this.ancestorExpansion = ancestorExpansion;
         this.nodeVolume = nodeVolume;
         this.node = node;

@@ -8,7 +8,7 @@ import java.io.Serializable;
  * @author Jonathan Fieldsend
  * @version 1.0
  */
-public class BallTreeLeaf<T> extends BallTreeNode implements Serializable
+public class BallTreeLeaf<T> extends BallTreeNode<T> implements Serializable
 {
     T cargo;
     

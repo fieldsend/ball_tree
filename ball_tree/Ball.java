@@ -38,7 +38,7 @@ public class Ball implements Serializable
     Ball(double[] centre, double radius) {
         this.centre = centre;
         this.radius = radius;
-        this.volume = calculateHypervolume();
+        this.volume = (radius > 0.0) ? calculateHypervolume() : 0.0;
     }
     
     /**
@@ -106,7 +106,7 @@ public class Ball implements Serializable
      * @param b array to compare
      * @returns squared distance between a and b
      */
-    static double squaredDist(double[] a, double[] b) {
+    public static double squaredDist(double[] a, double[] b) {
         double dist = 0.0;
         for (int i =0; i<a.length; i++)
             dist += Math.pow(a[i]-b[i],2);

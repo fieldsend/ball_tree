@@ -2,10 +2,12 @@ package ball_tree;
 
 import java.util.PriorityQueue;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.io.Serializable;
+import java.util.concurrent.ThreadLocalRandom;
 /**
- * OnlineBallTree is a generic implementation of the online balltree algorithm 
- * set out in pages 11-14 of:
+ * OfflineBallTree is a generic implementation of the offline balltree algorithm 
+ * set out in pages 8-9 of:
  * 
  * <p>Omohundro, Stephen M. 
  * Five balltree construction algorithms. 
@@ -20,7 +22,6 @@ import java.io.Serializable;
  * the parent. </li>
  * <li> Each leaf has a centre which denotes the location of the item stored in the leaf and a further generic type object 
  * associated with that location (does not accept null values) and has a radius of 0 (the ball is a point). </li>
- * <li> New locations are added to minimise the growth in total volume of the balls maintained in the tree </li>
  * <li> A BallTree storing M items will have M leaves. </li>
  * <li> The Euclidean distance is used</i>
  * </ul>
@@ -34,29 +35,107 @@ import java.io.Serializable;
  * @author Jonathan Fieldsend
  * @version 1.0
  */
-public class OnlineBallTree<T> implements Serializable
+public class OfflineBallTree<T> implements Serializable
 {
     private BallTreeNode<T> root = null;
     /**
      * Number of dimensions 
      */
     public final int DIM;
-    private int numItems = 0;
-    private static final long serialVersionUID = 42L;
+    private final int NUM_ITEMS;
+    private static final long serialVersionUID = 43L;
+    
     /**
      * Creates an OnlineBallTree to store items associated with dim-dimensional locations.
      * 
      * @param dim number of dimensions the double arrays passed in for locations for that this OnlineBallTree will expect
      * @throws IllegalNumberOfDimensionsException if the number of dimensions is fewer than 1 or above 452
      */
-    public OnlineBallTree(int dim) throws IllegalNumberOfDimensionsException {
-        if (dim < 1)
-            throw new IllegalNumberOfDimensionsException("The OnlineBallTree should be constructed for a minimum of 1-dimensional inputs");   
-        if (dim > 452)
-            throw new IllegalNumberOfDimensionsException("The OnlineBallTree should be constructed for a maximum of 452-dimensional inputs, as precision limitations means the unit ball is calculated as having a volume of 0.0 above this number.");    
-        this.DIM = dim;
+    public OfflineBallTree(double[][] location, T[] cargo) throws IllegalNumberOfDimensionsException {
+        if (location.length != cargo.length)
+            throw new RuntimeException("array of locations must have the same number of elements as the array of cargo items for ball tree construction");
+        this.DIM = location[0].length;
+        this.NUM_ITEMS = cargo.length;
+        this.buildTree(location,cargo);
     }
 
+    private void buildTree(double[][] location, T cargo[]) {
+        ArrayList<BallTreeLeaf<T>> ballArray = new ArrayList<>(cargo.length);
+        for (int i = 0; i < location.length; i++)
+            ballArray.add(new BallTreeLeaf<T>(new Ball(location[i], 0.0), cargo[i]));
+        this.root = this.buildForRange(ballArray,0,location.length-1);    
+    }
+    
+    /*
+     * lowerIndex inclusive,upperIndex exclusive
+     */
+    private BallTreeNode<T> buildForRange(ArrayList<BallTreeLeaf<T>> ballArray, int lowerIndex, int upperIndex) {
+        //System.out.println("buildforrange lb " + lowerIndex + ", ub " + upperIndex);
+        if (lowerIndex == upperIndex)
+            return ballArray.get(lowerIndex); // return the already build leaf
+        else {
+            int coordinateIndex = this.getMostSpreadDimension(ballArray,lowerIndex,upperIndex);
+            int median = (lowerIndex + upperIndex)/2; // get middle of range to be partitioned
+            //System.out.println("median " + median);
+            this.selectOnCoordinate(ballArray, lowerIndex, upperIndex, median, coordinateIndex); // partion left and right parts 
+            BallTreeNode<T> node = new BallTreeNode<>();
+            node.leftChild = this.buildForRange(ballArray,lowerIndex,median);
+            node.leftChild.parent = node;
+            node.rightChild = this.buildForRange(ballArray,median+1,upperIndex);
+            node.rightChild.parent = node;
+            node.ball = Ball.boundingBall(node.leftChild.ball,node.rightChild.ball); // set node to contain both children
+            return node;
+        }
+    }
+    
+    private int getMostSpreadDimension(ArrayList<BallTreeLeaf<T>> ballArray, int lowerBound, int upperBound) {
+        int dim = 0;
+        double[] max = new double[this.DIM];
+        double[] min = new double[this.DIM];
+        for (int i = 0; i < this.DIM; i++) {
+            max[i] =  ballArray.get(lowerBound).ball.centre[i];
+            min[i] =  ballArray.get(lowerBound).ball.centre[i];
+        }
+        //get ranges
+        for (int j=lowerBound+1; j <= upperBound; j++) {
+            for (int i = 0; i< this.DIM; i++) {
+                Ball ball = ballArray.get(j).ball;
+                if (max[i] < ball.centre[i]) {
+                    max[i] = ball.centre[i];
+                } else if (min[i] > ball.centre[i]) {
+                    min[i] = ball.centre[i];
+                }
+            }
+        }
+        // identofy most spread
+        for (int i = 1; i< this.DIM; i++) 
+            if ((max[i]-min[i]) > (max[dim]-min[dim]))
+                dim = i;
+        return dim;
+    }
+    
+    private void selectOnCoordinate(ArrayList<BallTreeLeaf<T>> ballArray, int lowerIndex, int upperIndex, int k, int partitionIndex) {
+        int lb = lowerIndex;
+        int ub = upperIndex;
+        while (lb < ub) {
+            int pivotIndex = ThreadLocalRandom.current().nextInt(lb, ub+1); // includes returning ub
+            Collections.swap(ballArray, pivotIndex, lb);// swap elements at pivotIndex and lb
+            int m = lb;
+            for (int i = lb+1; i<=ub; i++) {
+                if (ballArray.get(i).ball.centre[partitionIndex] < ballArray.get(lb).ball.centre[partitionIndex]) {
+                    m++;
+                    Collections.swap(ballArray, m, i);// swap elements at m and i
+                }
+            }
+            Collections.swap(ballArray, m, lb);// swap elements at lb and m
+            // all values from lb to m are now smaller than the item in element m on coordinate "partitionIndex"
+            if (m <= k) // processed up to a value lower than k, 
+                lb = m+1;
+            if (m >= k) // processed p to a value higher than
+                ub = m-1;
+        }
+    }
+    
     /**
      * Returns the height (level) of this tree. Note that leaves do not contribute to the height in this calculation.
      * 
@@ -76,119 +155,9 @@ public class OnlineBallTree<T> implements Serializable
      * @returns the number of items in the tree
      */
     public int size() {
-        return numItems;
+        return this.NUM_ITEMS;
     }
-    
-    /**
-     * Inserts the location and the associated generic type item into the tree. Returns true if inserted, returns false if not inserted (when the
-     * location already existing in the tree)
-     * 
-     * @param location array holding the location of the item to add
-     * @param cargo object to be stored associated with the location
-     * @returns true when location and cargo inserted, false if not inserted due to the corresponding location already being used to store an item in the tree
-     * @throws IllegalNumberOfDimensionsException if the number of elements of the argument does not match that of locations stored in this tree
-     */
-    public boolean insert(double[] location, T cargo) throws IllegalNumberOfDimensionsException, NullPointerException {
-        if (cargo == null) 
-            throw new NullPointerException("null values for the cargo item are not permitted");
-        if (location.length != DIM)
-            throw new IllegalNumberOfDimensionsException("This OnlineBallTree is for " + DIM + " dimensions, but the centre argument has " + location.length);
-        BallTreeLeaf<T> newLeaf = new BallTreeLeaf<>( new Ball(location, 0.0) ,cargo);
-        if (this.root == null){
-            this.root = newLeaf;
-        } else {
-            BallTreeNode<T> sibling = this.bestSibling(newLeaf);
-            BallTreeNode<T> newParent = new BallTreeNode<>( Ball.boundingBall(newLeaf.ball, sibling.ball) );
-            if (newParent.ball.volume == 0.0) { // if volume of parent ball is 0.0, then it is because both children have the same location 
-                return false;
-            }
-            // put parent in tree
-            newParent.parent = sibling.parent;
-            if (newParent.parent == null)
-                root = newParent;
-            else if (sibling.parent.leftChild == sibling)
-                sibling.parent.leftChild = newParent;
-            else 
-                sibling.parent.rightChild = newParent;
-            newParent.leftChild = sibling;
-            newParent.rightChild = newLeaf;
-
-            newLeaf.parent = newParent;
-            sibling.parent = newParent;
-            // update the volumes covered by parents up to the root due to the addition
-            this.repairParents(newParent); 
-        }
-        numItems++;
-        return true;
-    }
-
-    /**
-     * Removes (and returns) the item stored at the corresponding location. Note, the tree construction does not allow duplicate locations -- so 
-     * there is no issue of a potential one to many mapping from location to items.
-     * 
-     * @param location location to be removed and corresponding item retured. If the location does not exist in this tree, then null is returned.
-     * @returns the item stored at this location.
-     */
-    public T remove(double[] location) throws IllegalNumberOfDimensionsException {
-        BallTreeLeaf<T> storedLocation = this.nearestLeafQuery(location);
-        if (storedLocation == null)
-            return null; // empty tree
-        if (Ball.squaredDist(storedLocation.ball.centre, location) > 0.0 )
-            return null; // location does not exist in tree 
-        T cargo = storedLocation.cargo; // get cargo associated with location to return 
-        if (storedLocation.parent == null){
-            // the root is a leaf, so removing will empty the tree
-            root = null;
-            numItems--;
-            return cargo;
-        }
-        // at this point the location is valid, and the tree has more than one element, so the partent is valid, need to remove and rearrange the 
-        // structure
-        BallTreeNode<T> newParent = storedLocation.parent; // the parent will eventually get slotted out into a leaf holding the sibling
-        BallTreeNode<T> sibling;
-        if (newParent.leftChild == storedLocation)
-            sibling = newParent.rightChild;
-        else
-            sibling = newParent.leftChild;
-        sibling.parent = newParent.parent; // set the sibling's new parent to be the parent of the previous parent -- could be null
-        if (newParent.parent == null) {
-            root = sibling;
-        } else if (newParent.parent.leftChild == newParent){
-            newParent.parent.leftChild = sibling;
-        } else {
-            newParent.parent.rightChild = sibling;
-        }
-        this.shrinkBallsRecursively(newParent); // the parent no longer covers the removed location, so need to shrink the balls
-        numItems--;
-        return cargo;
-    }
-    
-    /*
-     * Goes up the tree adusting the ball of the parent to enclose the children
-     */
-    private void shrinkBallsRecursively(BallTreeNode<T> parent){
-        parent.ball = Ball.boundingBall(parent.leftChild.ball,parent.rightChild.ball);
-        if (parent.parent != null)
-            this.shrinkBallsRecursively(parent.parent);
-        return;    
-    }
-    
-    /*
-     * Goes up the tree and ensures that the parents contain the updated node
-     */
-    private void repairParents(BallTreeNode<T> node){
-        if (node.parent == null)
-            return; //reached root, nothing else to process
-        if (node.parent.ball.encloses(node.ball))
-            return; // parent contains the ball, which means all parents further up must also do, so can return
-        else {
-            // update centre and radius of parent to cover the new child node
-            Ball tempBall = Ball.boundingBall(node.parent.ball, node.ball);
-            node.parent.ball = tempBall; // replace ball with expanded version
-            this.repairParents(node.parent); // now update its parent recursively. Maybe make a node method?
-        }
-    }
-    
+        
     /**
      * Returns the item whose location is closest to the query.
      * 
@@ -227,7 +196,6 @@ public class OnlineBallTree<T> implements Serializable
      * @throws IllegalNumberOfDimensionsException if the number of elements of the argument does not match that of locations stored in this tree
      */
     public double kNearestNeighbourBallRadiusQuery(double[] location, int k) throws IllegalNumberOfDimensionsException {
-        
         // use priority queue. In java the head of the queue is the value with the least value
         // so want to order by negative of the distance, so head of the queue is worst value in queue.
         // additionally if the queue exceeds k, we simply poll the head to remove it.
@@ -294,7 +262,7 @@ public class OnlineBallTree<T> implements Serializable
      * Recursive method for k-nearest neighbour search
      */
     private void kNearestNeighbourSearch(Ball query, BallTreeNode<T> processingNode, PriorityQueue<QueuedLeaf<T>> kNNQueue, int k) {
-        if (processingNode.isLeaf()) {
+        if (processingNode instanceof BallTreeLeaf<?>) {//(processingNode.isLeaf()) {
             double distance = Math.sqrt(query.squaredDistanceToCentre(processingNode.ball));
             if (kNNQueue.size() < k-1) { // fewer than k neighbours in queue so far, so query radius should not be reduced
                 kNNQueue.offer(new QueuedLeaf<T>((BallTreeLeaf<T>)processingNode, distance));
@@ -386,60 +354,5 @@ public class OnlineBallTree<T> implements Serializable
             }
         }
         return nearestNeighbour;
-    }
-
-    /*
-     * Returns the best sibling for the new leaf argument
-     */
-    private BallTreeNode<T> bestSibling(BallTreeNode<T> newLeaf) {
-        if (root == null) {
-            return null;
-        }
-        // initialise priority queue to store the fringe nodes as empty
-        // The head of the queue is the least element of the ancestor expansion
-        PriorityQueue<TestFringe<T>> fringeNodePriorityQueue = new PriorityQueue<>();
-        BallTreeNode<T> result = this.root; // initially set result to root
-        Ball testBall = Ball.boundingBall(this.root.ball, newLeaf.ball);
-        TestFringe<T> tf;
-        double bestCost = testBall.volume;
-        if (result.isLeaf() == false) {
-            // create test fringe, set test fringe aexp = 0 as no ancestsors, set nd vol of test fringe to ballCost, set nd of test fringe to result
-            tf = new TestFringe<>(0.0, bestCost, result);
-            // insert tf to start of the priority queue frng
-            fringeNodePriorityQueue.offer(tf);
-        }
-        while (fringeNodePriorityQueue.size() > 0){// priority queue is not empty
-            // tf is popped off priority queue as the best candidate
-            tf = fringeNodePriorityQueue.poll();
-            if (tf.ancestorExpansion >= bestCost)
-                break; 
-            else {
-                double expansion = tf.ancestorExpansion + tf.nodeVolume - tf.node.ball.volume;
-                // process left node
-                testBall = Ball.boundingBall(tf.node.leftChild.ball, newLeaf.ball);
-                double volume = testBall.volume;
-                if (volume + expansion < bestCost){
-                    bestCost = volume + expansion;
-                    result = tf.node.leftChild;
-                }
-                // add left tree to priority queue
-                if (tf.node.leftChild.isLeaf() == false){
-                    TestFringe<T> tf2 = new TestFringe<>(expansion, volume,tf.node.leftChild);
-                    fringeNodePriorityQueue.offer(tf2);
-                }
-                // process right node
-                testBall = Ball.boundingBall(tf.node.rightChild.ball, newLeaf.ball);
-                volume = testBall.volume;
-                if (volume + expansion < bestCost){
-                    bestCost = volume + expansion;
-                    result = tf.node.rightChild;
-                }
-                if (tf.node.rightChild.isLeaf() == false){
-                    TestFringe<T> tf2 = new TestFringe<>(expansion, volume, tf.node.rightChild);
-                    fringeNodePriorityQueue.offer(tf2);
-                }
-            }
-        }
-        return result;
     }
 }

@@ -36,3 +36,6 @@ doc/serialized-form.html
 doc/stylesheet.css
 package.bluej
 README.TXT
+*.class
+*.ctxt
+*.csv
